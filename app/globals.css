@@ -467,7 +467,7 @@ article h2 { margin-bottom: 0.5rem; }
 }
 .auth-card {
   width: 100%;
-  max-width: 420px;
+  max-width: 520px;
   padding: 2.5rem;
 }
 .auth-card__brand {
@@ -497,6 +497,11 @@ article h2 { margin-bottom: 0.5rem; }
   font-size: 0.82rem;
   color: var(--text-muted);
   margin-top: 1.5rem;
+}
+.auth-form__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
 }
 .auth-card__back {
   display: block;
@@ -528,6 +533,7 @@ article h2 { margin-bottom: 0.5rem; }
   color: var(--text-muted);
 }
 .form-input,
+.form-select,
 .form-textarea {
   width: 100%;
   padding: 0.75rem 1rem;
@@ -541,8 +547,10 @@ article h2 { margin-bottom: 0.5rem; }
   display: block;
 }
 .form-input::placeholder,
+.form-select,
 .form-textarea::placeholder { color: var(--text-muted); }
 .form-input:focus,
+.form-select:focus,
 .form-textarea:focus {
   outline: none;
   border-color: var(--brand-primary);
