@@ -25,13 +25,31 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Password must be at least 10 characters long." }, { status: 400 });
   }
 
-  const result = await createUser({ name, email, password, role });
-  if ("error" in result) {
-    return NextResponse.json({ error: result.error }, { status: 409 });
-  }
+  try {
+    const result = await createUser({ name, email, password, role });
+    if ("error" in result) {
+      return NextResponse.json({ error: result.error }, { status: 409 });
+    }
 
-  const token = signSessionToken(result.user);
-  const response = NextResponse.json({ user: result.user }, { status: 201 });
-  response.headers.set("Set-Cookie", createSessionCookie(token));
-  return response;
+    const token = signSessionToken(result.user);
+    const response = NextResponse.json({ user: result.user }, { status: 201 });
+    response.headers.set("Set-Cookie", createSessionCookie(token));
+    return response;
+  } catch (error) {
+    console.error("Registration error:", error);
+    const message =
+      error instanceof Error
+        ? error.message
+        : typeof error === "string"
+        ? error
+        : error && typeof error === "object"
+        ? JSON.stringify(error)
+        : "Registration failed due to an unexpected server error.";
+    return NextResponse.json(
+      {
+        error: message,
+      },
+      { status: 500 }
+    );
+  }
 }

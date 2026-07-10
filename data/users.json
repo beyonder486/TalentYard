@@ -8,5 +8,15 @@
     "passwordSalt": "2e47b3e0ac9fdb2082926b7ae1b4094c",
     "passwordIterations": 210000,
     "createdAt": "2026-07-10T11:23:31.202Z"
+  },
+  {
+    "id": "u_5f352559e12d8fef",
+    "name": "sd",
+    "email": "sd@uni.edu",
+    "role": "Student",
+    "passwordHash": "b2e3b4859a692ea522927cb4c1ae51cd753fac1d20cf6e723db62ddf9d977ff1d714b53a547eca23bc3bd5a06ee63baafecb73d147722c54ca3e12d06e66dde9",
+    "passwordSalt": "4024d56f1135f9c4ccc407945af20eff",
+    "passwordIterations": 210000,
+    "createdAt": "2026-07-10T12:17:30.832Z"
   }
 ]
