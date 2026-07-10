@@ -983,6 +983,7 @@ article h2 { margin-bottom: 0.5rem; }
   .edit-profile-page__header { flex-direction: column; }
 }
 
+<<<<<<< HEAD
 /* ============================================================
    Projects Page
    ============================================================ */
@@ -1552,3 +1553,140 @@ article h2 { margin-bottom: 0.5rem; }
   .project-feed__grid { grid-template-columns: 1fr; }
 }
 
+=======
+.project-feed-section {
+  display: grid;
+  gap: 1.75rem;
+}
+.project-feed-header {
+  display: grid;
+  grid-template-columns: 1.8fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+  margin-bottom: 1.5rem;
+}
+.project-feed-copy {
+  max-width: 40rem;
+  color: var(--text-secondary);
+  margin-top: 0.5rem;
+}
+.project-filters {
+  padding: 1.5rem;
+  display: grid;
+  gap: 1.25rem;
+}
+.project-filter-group {
+  display: grid;
+  gap: 0.75rem;
+}
+.project-filter-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.project-filter-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.project-filter-value {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+.budget-range {
+  width: 100%;
+  accent-color: var(--brand-primary);
+}
+.budget-markers {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+.project-feed-loading,
+.project-feed-error,
+.project-feed-empty {
+  padding: 2rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  background: rgba(255,255,255,0.03);
+  color: var(--text-secondary);
+}
+.project-feed-error {
+  color: var(--error);
+}
+.project-feed-empty strong {
+  display: block;
+  margin-bottom: 0.75rem;
+  color: var(--text-primary);
+}
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+.project-card {
+  padding: 1.5rem;
+  display: grid;
+  gap: 1rem;
+  border: 1px solid var(--border-subtle);
+}
+.project-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.project-card__client {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--brand-primary);
+}
+.project-card__desc {
+  color: var(--text-secondary);
+  min-height: 5rem;
+  line-height: 1.7;
+}
+.project-card__meta {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+.project-card__budget,
+.project-card__date {
+  background: rgba(255,255,255,0.05);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-pill);
+}
+.project-card__skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.project-card__badge {
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-pill);
+  background: rgba(99,102,241,0.14);
+  color: var(--brand-primary);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.skill-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-pill);
+  background: rgba(255,255,255,0.06);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+.skill-chip--sm {
+  padding: 0.3rem 0.6rem;
+}
+>>>>>>> 28132b008e591a9537267e47bd3763066c8b95c1
