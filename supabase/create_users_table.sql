@@ -4,8 +4,8 @@ create table if not exists public.users (
   name text not null,
   email text not null unique,
   role text not null check (role in ('Student', 'Freelancer', 'Client', 'Mentor')),
-  passwordHash text not null,
-  passwordSalt text not null,
-  passwordIterations integer not null,
-  createdAt timestamptz not null default now()
+  password_hash text not null,
+  password_salt text not null,
+  password_iterations integer not null,
+  created_at timestamptz not null default now()
 );

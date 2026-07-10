@@ -24,6 +24,17 @@ interface StoredUser extends PublicUser {
   createdAt: string;
 }
 
+interface DbStoredUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  password_hash: string;
+  password_salt: string;
+  password_iterations: number;
+  created_at: string;
+}
+
 interface SessionPayload {
   sub: string;
   email: string;
@@ -90,7 +101,9 @@ export async function findUserByEmail(email: string) {
   const normalizedEmail = normalizeEmail(email);
   const { data, error } = await supabaseAdmin
     .from("users")
-    .select("id,name,email,role,passwordHash,passwordSalt,passwordIterations,createdAt")
+    .select(
+      "id,name,email,role,password_hash:passwordHash,password_salt:passwordSalt,password_iterations:passwordIterations,created_at:createdAt"
+    )
     .eq("email", normalizedEmail)
     .limit(1)
     .single();
@@ -99,7 +112,21 @@ export async function findUserByEmail(email: string) {
     throw error;
   }
 
-  return (data as StoredUser) ?? null;
+  if (!data) {
+    return null;
+  }
+
+  const dbUser = data as DbStoredUser;
+  return {
+    id: dbUser.id,
+    name: dbUser.name,
+    email: dbUser.email,
+    role: dbUser.role,
+    passwordHash: dbUser.password_hash,
+    passwordSalt: dbUser.password_salt,
+    passwordIterations: dbUser.password_iterations,
+    createdAt: dbUser.created_at,
+  };
 }
 
 export async function createUser(input: {
@@ -116,13 +143,15 @@ export async function createUser(input: {
   }
 
   const passwordRecord = createPasswordRecord(input.password);
-  const userToInsert: StoredUser = {
+  const userToInsert: DbStoredUser = {
     id: generateUserId(email),
     name: input.name.trim(),
     email,
     role: input.role.trim(),
-    ...passwordRecord,
-    createdAt: new Date().toISOString(),
+    password_hash: passwordRecord.passwordHash,
+    password_salt: passwordRecord.passwordSalt,
+    password_iterations: passwordRecord.passwordIterations,
+    created_at: new Date().toISOString(),
   };
 
   const { data, error } = await supabaseAdmin
