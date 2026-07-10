@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
 import ProfileCard from "../components/ProfileCard";
+import ProjectFeed from "./ProjectFeed";
 import { useAuth } from "../context/AuthContext";
 import { useProfile } from "../context/ProfileContext";
 
@@ -66,6 +67,9 @@ export default function DashboardPage() {
             compact
           />
         </section>
+
+        {/* Project Feed */}
+        <ProjectFeed />
 
         {/* Feature Cards */}
         <section className="dashboard-section">

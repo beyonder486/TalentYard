@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect } from "react";
 
 export default function Error({
@@ -69,7 +70,7 @@ export default function Error({
         >
           Try Again
         </button>
-        <a
+        <Link
           href="/"
           id="btn-error-home"
           style={{
@@ -85,7 +86,7 @@ export default function Error({
           }}
         >
           ← Home
-        </a>
+        </Link>
       </div>
       {error.digest && (
         <p style={{ fontSize: "0.75rem", color: "hsl(210,10%,35%)", fontFamily: "monospace" }}>
