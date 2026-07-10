@@ -6,56 +6,52 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  role: string;
 }
 
 interface AuthContextValue {
   currentUser: User | null;
-  login: (name: string, email: string) => User;
-  logout: () => void;
   loading: boolean;
+  refreshSession: () => Promise<User | null>;
+  setCurrentUser: (user: User | null) => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
-
-const STORAGE_KEY = "ty_user";
-
-function generateUserId(email: string): string {
-  // Deterministic ID from email so re-login recovers same profile
-  let hash = 0;
-  for (let i = 0; i < email.length; i++) {
-    hash = ((hash << 5) - hash + email.charCodeAt(i)) | 0;
-  }
-  return "u_" + Math.abs(hash).toString(36);
-}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setCurrentUser(JSON.parse(raw));
-    } catch {
-      // ignore parse errors
+  const refreshSession = useCallback(async () => {
+    const response = await fetch("/api/auth/me", {
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      setCurrentUser(null);
+      return null;
     }
-    setLoading(false);
+
+    const data = (await response.json()) as { user: User };
+    setCurrentUser(data.user);
+    return data.user;
   }, []);
 
-  const login = useCallback((name: string, email: string): User => {
-    const user: User = { id: generateUserId(email), name: name.trim(), email: email.trim().toLowerCase() };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-    setCurrentUser(user);
-    return user;
-  }, []);
+  useEffect(() => {
+    void refreshSession().finally(() => setLoading(false));
+  }, [refreshSession]);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY);
+  const logout = useCallback(async () => {
+    await fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "include",
+    });
     setCurrentUser(null);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ currentUser, login, logout, loading }}>
+    <AuthContext.Provider value={{ currentUser, loading, refreshSession, setCurrentUser, logout }}>
       {children}
     </AuthContext.Provider>
   );

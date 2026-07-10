@@ -4,7 +4,7 @@ TalentYard is a student freelancer marketplace built for students looking for pa
 
 ## Project Scope
 
-This repository contains the initial Next.js boilerplate for TalentYard. The current scope is intentionally limited to a frontend starter setup. Supabase integration, authentication, database models, and backend services will be added in later development phases.
+This repository now includes a lightweight backend authentication flow for registration, login, and session persistence. User accounts are stored in a local JSON data file for development, passwords are hashed before storage, and successful sign-in issues an httpOnly session cookie.
 
 ## Epics
 
@@ -35,7 +35,8 @@ The product is organized around these core epics in Jira:
 - **Next.js** for the frontend application
 - **React** for UI components
 - **TypeScript** for typed developer ergonomics
-- **Supabase** planned for authentication, database, and storage
+- **Next.js route handlers** for authentication and session management
+- **File-backed local storage** for the development user store
 
 ## Included Boilerplate
 
@@ -76,7 +77,11 @@ http://localhost:3000
 
 ## Next Steps
 
-- Add Supabase integration for authentication and persistent storage
+- Replace the local JSON user store with a production database such as Supabase or PostgreSQL
 - Build user profile pages and onboarding flows
 - Create job posting and search/listing pages
 - Implement bidding, milestone tracking, delivery workflows, and reviews
+
+## Environment Variables
+
+- `AUTH_SECRET` - optional in development, required in production to sign session tokens securely
