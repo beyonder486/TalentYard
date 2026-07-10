@@ -44,12 +44,8 @@ interface SessionPayload {
 }
 
 function base64UrlEncode(value: Buffer | string) {
-<<<<<<< HEAD
-  return Buffer.from(value).toString("base64").replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
-=======
   const buffer = typeof value === "string" ? Buffer.from(value) : value;
   return buffer.toString("base64").replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
->>>>>>> 28132b008e591a9537267e47bd3763066c8b95c1
 }
 
 function base64UrlDecode(value: string) {
@@ -93,25 +89,75 @@ export function verifyPassword(password: string, user: Pick<StoredUser, "passwor
     PASSWORD_DIGEST
   );
   const stored = Buffer.from(user.passwordHash, "hex");
-<<<<<<< HEAD
-  return stored.length === candidate.length && timingSafeEqual(stored, candidate);
-=======
   const storedBytes = new Uint8Array(stored.buffer, stored.byteOffset, stored.byteLength);
   const candidateBytes = new Uint8Array(candidate.buffer, candidate.byteOffset, candidate.byteLength);
   return (
     stored.length === candidate.length &&
     timingSafeEqual(storedBytes, candidateBytes)
   );
->>>>>>> 28132b008e591a9537267e47bd3763066c8b95c1
+}
+
+function getStringValue(data: Record<string, any>, keys: string[]) {
+  for (const key of keys) {
+    const value = data[key];
+    if (typeof value === "string") {
+      return value;
+    }
+  }
+  return null;
+}
+
+function getNumberValue(data: Record<string, any>, keys: string[]) {
+  for (const key of keys) {
+    const value = data[key];
+    if (typeof value === "number") {
+      return value;
+    }
+    if (typeof value === "string" && !Number.isNaN(Number(value))) {
+      return Number(value);
+    }
+  }
+  return null;
+}
+
+function normalizeDbUser(data: Record<string, any>): StoredUser | null {
+  if (!data) return null;
+
+  const passwordHash = getStringValue(data, ["password_hash", "passwordHash", "passwordhash"]);
+  const passwordSalt = getStringValue(data, ["password_salt", "passwordSalt", "passwordsalt"]);
+  const createdAt = getStringValue(data, ["created_at", "createdAt", "createdat"]);
+  const passwordIterations = getNumberValue(data, ["password_iterations", "passwordIterations", "passworditerations"]);
+
+  if (
+    !data.id ||
+    !data.name ||
+    !data.email ||
+    !data.role ||
+    !passwordHash ||
+    !passwordSalt ||
+    passwordIterations === null ||
+    !createdAt
+  ) {
+    return null;
+  }
+
+  return {
+    id: data.id,
+    name: data.name,
+    email: data.email,
+    role: data.role,
+    passwordHash,
+    passwordSalt,
+    passwordIterations,
+    createdAt,
+  };
 }
 
 export async function findUserByEmail(email: string) {
   const normalizedEmail = normalizeEmail(email);
   const { data, error } = await supabaseAdmin
     .from("users")
-    .select(
-      "id,name,email,role,password_hash:passwordHash,password_salt:passwordSalt,password_iterations:passwordIterations,created_at:createdAt"
-    )
+    .select("*")
     .eq("email", normalizedEmail)
     .limit(1)
     .single();
@@ -124,17 +170,8 @@ export async function findUserByEmail(email: string) {
     return null;
   }
 
-  const dbUser = data as DbStoredUser;
-  return {
-    id: dbUser.id,
-    name: dbUser.name,
-    email: dbUser.email,
-    role: dbUser.role,
-    passwordHash: dbUser.password_hash,
-    passwordSalt: dbUser.password_salt,
-    passwordIterations: dbUser.password_iterations,
-    createdAt: dbUser.created_at,
-  };
+  const user = normalizeDbUser(data as Record<string, any>);
+  return user;
 }
 
 export async function createUser(input: {
@@ -151,22 +188,66 @@ export async function createUser(input: {
   }
 
   const passwordRecord = createPasswordRecord(input.password);
-  const userToInsert: DbStoredUser = {
-    id: generateUserId(email),
-    name: input.name.trim(),
-    email,
-    role: input.role.trim(),
-    password_hash: passwordRecord.passwordHash,
-    password_salt: passwordRecord.passwordSalt,
-    password_iterations: passwordRecord.passwordIterations,
-    created_at: new Date().toISOString(),
-  };
+  const payloads: Array<Record<string, unknown>> = [
+    {
+      id: generateUserId(email),
+      name: input.name.trim(),
+      email,
+      role: input.role.trim(),
+      password_hash: passwordRecord.passwordHash,
+      password_salt: passwordRecord.passwordSalt,
+      password_iterations: passwordRecord.passwordIterations,
+      created_at: new Date().toISOString(),
+    },
+    {
+      id: generateUserId(email),
+      name: input.name.trim(),
+      email,
+      role: input.role.trim(),
+      passwordHash: passwordRecord.passwordHash,
+      passwordSalt: passwordRecord.passwordSalt,
+      passwordIterations: passwordRecord.passwordIterations,
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: generateUserId(email),
+      name: input.name.trim(),
+      email,
+      role: input.role.trim(),
+      passwordhash: passwordRecord.passwordHash,
+      passwordsalt: passwordRecord.passwordSalt,
+      passworditerations: passwordRecord.passwordIterations,
+      createdat: new Date().toISOString(),
+    },
+  ];
 
-  const { data, error } = await supabaseAdmin
-    .from("users")
-    .insert(userToInsert)
-    .select("id,name,email,role")
-    .single();
+  function shouldRetryInsert(error: any) {
+    if (!error) return false;
+    if (error.code === "42703") return true;
+    const message = `${error.message ?? ""} ${error.details ?? ""}`;
+    return /does not exist|not found|could not find.*column|could not find.*schema cache/i.test(message);
+  }
+
+  let insertResult;
+  for (const payload of payloads) {
+    const result = await supabaseAdmin
+      .from("users")
+      .insert(payload)
+      .select("id,name,email,role")
+      .single();
+
+    if (!result.error) {
+      insertResult = result;
+      break;
+    }
+
+    if (!shouldRetryInsert(result.error)) {
+      insertResult = result;
+      break;
+    }
+  }
+
+  const { data, error } = insertResult ?? { data: null, error: { message: "Registration failed due to a database error." } };
 
   if (error) {
     if (error.code === "23505") {
