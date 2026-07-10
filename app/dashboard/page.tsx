@@ -9,7 +9,7 @@ import { useAuth } from "../context/AuthContext";
 import { useProfile } from "../context/ProfileContext";
 
 const placeholderCards = [
-  { id: "jobs", icon: "📋", title: "Job Board", desc: "Browse student-friendly gigs and open projects.", link: "#" },
+  { id: "jobs", icon: "📋", title: "Job Board", desc: "Browse student-friendly gigs and open projects.", link: "/dashboard/projects" },
   { id: "bids", icon: "🏷️", title: "My Bids", desc: "Track your active proposals and negotiation status.", link: "#" },
   { id: "reviews", icon: "⭐", title: "Reviews", desc: "Your reputation score and client feedback.", link: "#" },
 ];

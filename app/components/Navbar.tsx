@@ -36,6 +36,9 @@ export default function Navbar() {
               <Link href="/dashboard" className="navbar__link" id="nav-dashboard">
                 Dashboard
               </Link>
+              <Link href="/dashboard/projects" className="navbar__link" id="nav-browse-projects">
+                Browse Projects
+              </Link>
               <Link href="/profile/edit" className="navbar__link" id="nav-edit-profile">
                 Edit Profile
               </Link>
