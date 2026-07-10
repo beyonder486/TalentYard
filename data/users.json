@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "id": "u_3a553142f550d2ad",
+    "name": "ab",
+    "email": "ab@sdgu.edu",
+    "role": "Student",
+    "passwordHash": "2162a22cf0933d132a55c4351ee5c123bfc7dc648bfb3de42c11c313f6f4c5245292a58944831a9bda3b7746ddc184da9037a5779c3c00a3315b5560b15e4c16",
+    "passwordSalt": "2e47b3e0ac9fdb2082926b7ae1b4094c",
+    "passwordIterations": 210000,
+    "createdAt": "2026-07-10T11:23:31.202Z"
+  }
+]
