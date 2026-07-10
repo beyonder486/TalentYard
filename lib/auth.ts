@@ -1,8 +1,6 @@
 import { createHmac, pbkdf2Sync, randomBytes, timingSafeEqual } from "crypto";
-import { readFile, writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { supabaseAdmin } from "./supabaseAdmin";
 
-const USERS_FILE = path.join(process.cwd(), "data", "users.json");
 const AUTH_SECRET = process.env.AUTH_SECRET || "talentyard-dev-secret";
 const PASSWORD_ITERATIONS = 210000;
 const PASSWORD_KEY_LENGTH = 64;
@@ -96,28 +94,20 @@ export function verifyPassword(password: string, user: Pick<StoredUser, "passwor
 >>>>>>> 28132b008e591a9537267e47bd3763066c8b95c1
 }
 
-async function readUsers(): Promise<StoredUser[]> {
-  try {
-    const raw = await readFile(USERS_FILE, "utf8");
-    const parsed = JSON.parse(raw) as StoredUser[];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      return [];
-    }
-    throw error;
-  }
-}
-
-async function writeUsers(users: StoredUser[]) {
-  await mkdir(path.dirname(USERS_FILE), { recursive: true });
-  await writeFile(USERS_FILE, JSON.stringify(users, null, 2) + "\n", "utf8");
-}
-
 export async function findUserByEmail(email: string) {
   const normalizedEmail = normalizeEmail(email);
-  const users = await readUsers();
-  return users.find((user) => user.email === normalizedEmail) ?? null;
+  const { data, error } = await supabaseAdmin
+    .from("users")
+    .select("id,name,email,role,passwordHash,passwordSalt,passwordIterations,createdAt")
+    .eq("email", normalizedEmail)
+    .limit(1)
+    .single();
+
+  if (error && error.code !== "PGRST116") {
+    throw error;
+  }
+
+  return (data as StoredUser) ?? null;
 }
 
 export async function createUser(input: {
@@ -126,16 +116,15 @@ export async function createUser(input: {
   password: string;
   role: string;
 }) {
-  const users = await readUsers();
   const email = normalizeEmail(input.email);
-  const existing = users.find((user) => user.email === email);
+  const existing = await findUserByEmail(email);
 
   if (existing) {
     return { error: "An account with this email already exists." as const };
   }
 
   const passwordRecord = createPasswordRecord(input.password);
-  const user: StoredUser = {
+  const userToInsert: StoredUser = {
     id: generateUserId(email),
     name: input.name.trim(),
     email,
@@ -144,10 +133,29 @@ export async function createUser(input: {
     createdAt: new Date().toISOString(),
   };
 
-  users.push(user);
-  await writeUsers(users);
+  const { data, error } = await supabaseAdmin
+    .from("users")
+    .insert(userToInsert)
+    .select("id,name,email,role")
+    .single();
 
-  return { user: toPublicUser(user) };
+  if (error) {
+    if (error.code === "23505") {
+      return { error: "An account with this email already exists." as const };
+    }
+    return {
+      error:
+        error.message ||
+        error.details ||
+        "Registration failed due to a database error.",
+    };
+  }
+
+  if (!data) {
+    return { error: "Registration failed: no user record was returned." as const };
+  }
+
+  return { user: toPublicUser(data as Pick<StoredUser, "id" | "name" | "email" | "role">) };
 }
 
 export async function authenticateUser(email: string, password: string) {
