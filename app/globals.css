@@ -983,7 +983,6 @@ article h2 { margin-bottom: 0.5rem; }
   .edit-profile-page__header { flex-direction: column; }
 }
 
-<<<<<<< HEAD
 /* ============================================================
    Projects Page
    ============================================================ */
@@ -1553,7 +1552,7 @@ article h2 { margin-bottom: 0.5rem; }
   .project-feed__grid { grid-template-columns: 1fr; }
 }
 
-=======
+
 .project-feed-section {
   display: grid;
   gap: 1.75rem;
@@ -1689,4 +1688,4 @@ article h2 { margin-bottom: 0.5rem; }
 .skill-chip--sm {
   padding: 0.3rem 0.6rem;
 }
->>>>>>> 28132b008e591a9537267e47bd3763066c8b95c1
+

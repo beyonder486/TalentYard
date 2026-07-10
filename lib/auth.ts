@@ -29,10 +29,10 @@ interface DbStoredUser {
   name: string;
   email: string;
   role: string;
-  password_hash: string;
-  password_salt: string;
-  password_iterations: number;
-  created_at: string;
+  passwordhash: string;
+  passwordsalt: string;
+  passworditerations: number;
+  createdat: string;
 }
 
 interface SessionPayload {
@@ -44,12 +44,8 @@ interface SessionPayload {
 }
 
 function base64UrlEncode(value: Buffer | string) {
-<<<<<<< HEAD
-  return Buffer.from(value).toString("base64").replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
-=======
   const buffer = typeof value === "string" ? Buffer.from(value) : value;
   return buffer.toString("base64").replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
->>>>>>> 28132b008e591a9537267e47bd3763066c8b95c1
 }
 
 function base64UrlDecode(value: string) {
@@ -93,25 +89,61 @@ export function verifyPassword(password: string, user: Pick<StoredUser, "passwor
     PASSWORD_DIGEST
   );
   const stored = Buffer.from(user.passwordHash, "hex");
-<<<<<<< HEAD
-  return stored.length === candidate.length && timingSafeEqual(stored, candidate);
-=======
   const storedBytes = new Uint8Array(stored.buffer, stored.byteOffset, stored.byteLength);
   const candidateBytes = new Uint8Array(candidate.buffer, candidate.byteOffset, candidate.byteLength);
   return (
     stored.length === candidate.length &&
     timingSafeEqual(storedBytes, candidateBytes)
   );
->>>>>>> 28132b008e591a9537267e47bd3763066c8b95c1
+}
+
+function getUserField<T = string>(data: Record<string, any>, snake: string, camel: string): T | null {
+  if (data[snake] !== undefined) {
+    return data[snake] as T;
+  }
+  if (data[camel] !== undefined) {
+    return data[camel] as T;
+  }
+  return null;
+}
+
+function normalizeStoredUser(data: Record<string, any>): StoredUser | null {
+  const passwordHash = getUserField<string>(data, "passwordhash", "passwordHash");
+  const passwordSalt = getUserField<string>(data, "passwordsalt", "passwordSalt");
+  const passwordIterations = getUserField<number>(data, "passworditerations", "passwordIterations");
+  const createdAt = getUserField<string>(data, "createdat", "createdAt");
+
+  if (
+    !data.id ||
+    !data.name ||
+    !data.email ||
+    !data.role ||
+    !passwordHash ||
+    !passwordSalt ||
+    passwordIterations === null ||
+    passwordIterations === undefined ||
+    !createdAt
+  ) {
+    return null;
+  }
+
+  return {
+    id: data.id,
+    name: data.name,
+    email: data.email,
+    role: data.role,
+    passwordHash,
+    passwordSalt,
+    passwordIterations,
+    createdAt,
+  };
 }
 
 export async function findUserByEmail(email: string) {
   const normalizedEmail = normalizeEmail(email);
   const { data, error } = await supabaseAdmin
     .from("users")
-    .select(
-      "id,name,email,role,password_hash:passwordHash,password_salt:passwordSalt,password_iterations:passwordIterations,created_at:createdAt"
-    )
+    .select("*")
     .eq("email", normalizedEmail)
     .limit(1)
     .single();
@@ -124,17 +156,7 @@ export async function findUserByEmail(email: string) {
     return null;
   }
 
-  const dbUser = data as DbStoredUser;
-  return {
-    id: dbUser.id,
-    name: dbUser.name,
-    email: dbUser.email,
-    role: dbUser.role,
-    passwordHash: dbUser.password_hash,
-    passwordSalt: dbUser.password_salt,
-    passwordIterations: dbUser.password_iterations,
-    createdAt: dbUser.created_at,
-  };
+  return normalizeStoredUser(data as Record<string, any>);
 }
 
 export async function createUser(input: {
@@ -151,37 +173,41 @@ export async function createUser(input: {
   }
 
   const passwordRecord = createPasswordRecord(input.password);
-  const userToInsert: DbStoredUser = {
+  const payload = {
     id: generateUserId(email),
     name: input.name.trim(),
     email,
     role: input.role.trim(),
-    password_hash: passwordRecord.passwordHash,
-    password_salt: passwordRecord.passwordSalt,
-    password_iterations: passwordRecord.passwordIterations,
-    created_at: new Date().toISOString(),
+    passwordhash: passwordRecord.passwordHash,
+    passwordsalt: passwordRecord.passwordSalt,
+    passworditerations: passwordRecord.passwordIterations,
+    createdat: new Date().toISOString(),
   };
 
-  const { data, error } = await supabaseAdmin
+  let lastError: any = null;
+  let data: any = null;
+
+  const result = await supabaseAdmin
     .from("users")
-    .insert(userToInsert)
+    .insert(payload)
     .select("id,name,email,role")
     .single();
 
-  if (error) {
-    if (error.code === "23505") {
-      return { error: "An account with this email already exists." as const };
-    }
-    return {
-      error:
-        error.message ||
-        error.details ||
-        "Registration failed due to a database error.",
-    };
+  if (!result.error) {
+    data = result.data;
+  } else {
+    lastError = result.error;
   }
 
   if (!data) {
-    return { error: "Registration failed: no user record was returned." as const };
+    const error = lastError ?? { message: "Registration failed due to a database error." };
+    if (error.code === "23505") {
+      return { error: "An account with this email already exists." as const };
+    }
+
+    return {
+      error: error.message || error.details || "Registration failed due to a database error.",
+    };
   }
 
   return { user: toPublicUser(data as Pick<StoredUser, "id" | "name" | "email" | "role">) };
