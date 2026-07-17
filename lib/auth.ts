@@ -44,12 +44,7 @@ interface SessionPayload {
 }
 
 function base64UrlEncode(value: Buffer | string) {
-<<<<<<< HEAD
   return Buffer.from(value).toString("base64").replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
-=======
-  const buffer = typeof value === "string" ? Buffer.from(value) : value;
-  return buffer.toString("base64").replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
->>>>>>> 28132b008e591a9537267e47bd3763066c8b95c1
 }
 
 function base64UrlDecode(value: string) {
@@ -93,16 +88,7 @@ export function verifyPassword(password: string, user: Pick<StoredUser, "passwor
     PASSWORD_DIGEST
   );
   const stored = Buffer.from(user.passwordHash, "hex");
-<<<<<<< HEAD
   return stored.length === candidate.length && timingSafeEqual(stored, candidate);
-=======
-  const storedBytes = new Uint8Array(stored.buffer, stored.byteOffset, stored.byteLength);
-  const candidateBytes = new Uint8Array(candidate.buffer, candidate.byteOffset, candidate.byteLength);
-  return (
-    stored.length === candidate.length &&
-    timingSafeEqual(storedBytes, candidateBytes)
-  );
->>>>>>> 28132b008e591a9537267e47bd3763066c8b95c1
 }
 
 export async function findUserByEmail(email: string) {
