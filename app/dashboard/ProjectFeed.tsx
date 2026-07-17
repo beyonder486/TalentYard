@@ -43,6 +43,7 @@ export default function ProjectFeed() {
       const query = supabase
         .from("projects")
         .select("id,title,description,skills,budget,posted_at,client_name,remote")
+        .eq("status", "active")
         .order("posted_at", { ascending: false });
 
       const { data, error: supabaseError } = await query;
