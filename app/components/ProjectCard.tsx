@@ -1,6 +1,7 @@
 "use client";
 
 import type { Project } from "../../types/project";
+import Link from "next/link";
 
 function formatBudget(min: number, max: number) {
   const fmt = (n: number) =>
@@ -92,13 +93,14 @@ export default function ProjectCard({ project, index }: Props) {
 
       {/* CTA */}
       <div className="project-card__footer">
-        <button
+        <Link
+          href={`/dashboard/projects/${project.id}`}
           className="btn btn--primary btn--sm"
           id={`btn-view-project-${project.id}`}
           aria-label={`View details for ${project.title}`}
         >
           View Details →
-        </button>
+        </Link>
         <span className="project-card__active-badge">● Active</span>
       </div>
     </article>

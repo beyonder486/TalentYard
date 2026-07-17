@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase, ProjectListing } from "../../lib/supabaseClient";
 import SkillTagInput from "../components/SkillTagInput";
+import Link from "next/link";
 
 const skillOptions = [
   "Next.js",
@@ -156,6 +157,16 @@ export default function ProjectFeed() {
                     {skill}
                   </span>
                 ))}
+              </div>
+              <div className="project-card__footer" style={{ marginTop: "1rem" }}>
+                <Link
+                  href={`/dashboard/projects/${project.id}`}
+                  className="btn btn--primary btn--sm"
+                  id={`btn-view-project-${project.id}`}
+                  aria-label={`View details for ${project.title}`}
+                >
+                  View Details →
+                </Link>
               </div>
             </article>
           ))}
