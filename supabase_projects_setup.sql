@@ -7,7 +7,7 @@ create table public.projects (
   id          uuid        primary key default gen_random_uuid(),
   title       text        not null,
   description text,
-  skills      text[]      not null default '{}',
+  skills      text[]    not null default '{}'::text[],
   budget_min  numeric     not null default 0,
   budget_max  numeric     not null default 0,
   client_name text,
