@@ -19,6 +19,15 @@ interface Proposal {
   student_name?: string;
 }
 
+interface Review {
+  id: string;
+  rating: number;
+  comment: string;
+  reviewer_id: string;
+  reviewee_id: string;
+  created_at: string;
+}
+
 export default function ManageProposalsPage() {
   const { id } = useParams() as { id: string };
   const { currentUser, loading: authLoading } = useAuth();
@@ -32,6 +41,12 @@ export default function ManageProposalsPage() {
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [accepting, setAccepting] = useState(false);
+
+  const [review, setReview] = useState<Review | null>(null);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [rating, setRating] = useState<number>(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [completing, setCompleting] = useState(false);
 
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
@@ -88,6 +103,17 @@ export default function ManageProposalsPage() {
           setProposals(propData);
         }
       }
+
+      // 3. Fetch review if completed
+      if (projData.status === "completed") {
+        const { data: revData } = await supabase
+          .from("reviews")
+          .select("*")
+          .eq("project_id", id)
+          .single();
+        if (revData) setReview(revData as Review);
+      }
+
       setLoading(false);
     }
     
@@ -134,6 +160,48 @@ export default function ManageProposalsPage() {
     }
   };
 
+  const handleCompleteProject = async () => {
+    if (!project || !currentUser) return;
+    const acceptedProposal = proposals.find(p => p.status === "accepted");
+    if (!acceptedProposal) return;
+
+    if (reviewComment.length > 1000) {
+      showToast("Review must not exceed 1000 characters.", "error");
+      return;
+    }
+
+    setCompleting(true);
+
+    const { error } = await supabase.rpc("complete_project", {
+      p_project_id: project.id,
+      p_reviewer_id: currentUser.id,
+      p_reviewee_id: acceptedProposal.student_id,
+      p_rating: rating,
+      p_comment: reviewComment
+    });
+
+    setCompleting(false);
+
+    if (error) {
+      console.error(error);
+      showToast("Failed to complete project. Check if RPC is created.", "error");
+    } else {
+      setIsReviewModalOpen(false);
+      showToast("Project completed successfully!", "success");
+      
+      setProject({ ...project, status: "completed" } as any);
+      setReview({
+        id: "temp",
+        project_id: project.id,
+        reviewer_id: currentUser.id,
+        reviewee_id: acceptedProposal.student_id,
+        rating,
+        comment: reviewComment,
+        created_at: new Date().toISOString()
+      });
+    }
+  };
+
   if (authLoading || loading) {
     return (
       <div className="page-loading" aria-label="Loading…">
@@ -173,12 +241,43 @@ export default function ManageProposalsPage() {
               For project: <strong>{project.title}</strong>
             </p>
           </div>
-          <div>
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
             <span className="project-card__badge" style={{ fontSize: "1rem", padding: "0.5rem 1rem" }}>
               Status: {(project as any).status || "active"}
             </span>
+            {(project as any).status === "in_progress" && (
+              <button 
+                className="btn btn--primary"
+                onClick={() => setIsReviewModalOpen(true)}
+              >
+                Mark as Completed
+              </button>
+            )}
           </div>
         </div>
+
+        {/* Read-only Archive View for Completed Projects */}
+        {(project as any).status === "completed" && review && (
+          <section className="glass-card" style={{ padding: "2rem", marginBottom: "2rem", border: "1px solid var(--success)" }}>
+            <h2 style={{ color: "var(--success)", marginBottom: "1rem" }}>✅ Project Completed</h2>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
+              <span style={{ fontSize: "1.2rem", fontWeight: "bold" }}>Rating:</span>
+              <div style={{ display: "flex", gap: "0.2rem" }}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <span key={star} style={{ fontSize: "1.2rem", color: star <= review.rating ? "#f1c40f" : "var(--border-subtle)" }}>
+                    ★
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div style={{ background: "rgba(0,0,0,0.15)", padding: "1.5rem", borderRadius: "var(--radius-md)" }}>
+              <h3 style={{ fontSize: "0.9rem", color: "var(--text-muted)", marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Client Feedback</h3>
+              <p style={{ color: "var(--text-primary)", whiteSpace: "pre-wrap", lineHeight: "1.6" }}>
+                {review.comment}
+              </p>
+            </div>
+          </section>
+        )}
         
         <div className="proposals-grid" style={{ display: "grid", gap: "1.5rem" }}>
           {proposals.length === 0 ? (
@@ -216,7 +315,7 @@ export default function ManageProposalsPage() {
                   <p style={{ whiteSpace: "pre-wrap" }}>{proposal.cover_letter}</p>
                 </div>
                 
-                {(project as any).status !== "in_progress" && proposal.status === "Pending Review" && (
+                {(project as any).status === "active" && proposal.status === "Pending Review" && (
                   <div style={{ display: "flex", justifyContent: "flex-end" }}>
                     <button 
                       className="btn btn--primary" 
@@ -266,6 +365,85 @@ export default function ManageProposalsPage() {
                 style={{ minWidth: "140px" }}
               >
                 {accepting ? <span className="btn__spinner" /> : "Yes, Accept"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Review & Complete Modal */}
+      {isReviewModalOpen && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 1000,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)"
+        }}>
+          <div className="glass-card" style={{
+            width: "100%", maxWidth: "600px", padding: "2.5rem",
+            background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)",
+            boxShadow: "var(--shadow-lg)"
+          }}>
+            <h2 style={{ marginBottom: "1.5rem", fontSize: "1.5rem" }}>Mark Project as Completed</h2>
+            
+            <div className="form-group" style={{ marginBottom: "1.5rem" }}>
+              <label className="form-label">
+                Rating
+                <span className="form-label__hint">Rate the student's work from 1 to 5</span>
+              </label>
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setRating(star)}
+                    style={{
+                      background: "none", border: "none",
+                      fontSize: "2rem", cursor: "pointer",
+                      color: star <= rating ? "#f1c40f" : "var(--border-subtle)",
+                      transition: "color 0.2s"
+                    }}
+                  >
+                    ★
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="form-group" style={{ marginBottom: "2rem" }}>
+              <label htmlFor="review-comment" className="form-label">
+                Written Feedback
+                <span className="form-label__hint">Share your experience (max 1000 characters)</span>
+              </label>
+              <textarea
+                id="review-comment"
+                className="form-textarea"
+                rows={5}
+                style={{ width: "100%", padding: "1rem", borderRadius: "var(--radius-md)", background: "rgba(0,0,0,0.2)", border: "1px solid var(--border-input)", color: "var(--text-primary)" }}
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+                maxLength={1000}
+                placeholder="The deliverables were great because..."
+              />
+              <p style={{ fontSize: "0.85rem", marginTop: "0.5rem", color: reviewComment.length > 1000 ? "var(--error)" : "var(--text-muted)" }}>
+                {reviewComment.length} / 1000 characters
+              </p>
+            </div>
+            
+            <div style={{ display: "flex", gap: "1rem", justifyContent: "flex-end" }}>
+              <button 
+                className="btn btn--ghost" 
+                onClick={() => setIsReviewModalOpen(false)}
+                disabled={completing}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn btn--primary" 
+                onClick={handleCompleteProject}
+                disabled={completing || reviewComment.length > 1000 || rating < 1 || rating > 5}
+                style={{ minWidth: "160px" }}
+              >
+                {completing ? <span className="btn__spinner" /> : "Submit & Complete"}
               </button>
             </div>
           </div>
