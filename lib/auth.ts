@@ -95,9 +95,7 @@ export async function findUserByEmail(email: string) {
   const normalizedEmail = normalizeEmail(email);
   const { data, error } = await supabaseAdmin
     .from("users")
-    .select(
-      "id,name,email,role,password_hash:passwordHash,password_salt:passwordSalt,password_iterations:passwordIterations,created_at:createdAt"
-    )
+    .select("*")
     .eq("email", normalizedEmail)
     .limit(1)
     .single();
