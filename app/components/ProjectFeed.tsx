@@ -5,6 +5,7 @@ import ProjectCard from "./ProjectCard";
 import ProjectFeedSidebar from "./ProjectFeedSidebar";
 import ProjectEmptyState from "./ProjectEmptyState";
 import { useProjects } from "../hooks/useProjects";
+import { useAuth } from "../context/AuthContext";
 
 const DEFAULT_BUDGET: [number, number] = [0, 10000];
 
@@ -36,6 +37,7 @@ function SkeletonCard({ index }: { index: number }) {
 }
 
 export default function ProjectFeed() {
+  const { currentUser } = useAuth();
   const [skillQuery, setSkillQuery] = useState("");
   const [budgetRange, setBudgetRange] = useState<[number, number]>(DEFAULT_BUDGET);
 
@@ -126,7 +128,12 @@ export default function ProjectFeed() {
             aria-label={`${projects.length} active project listings`}
           >
             {projects.map((project, index) => (
-              <ProjectCard key={project.id} project={project} index={index} />
+              <ProjectCard
+                key={project.id}
+                project={project}
+                index={index}
+                currentUserId={currentUser?.id}
+              />
             ))}
           </div>
         )}

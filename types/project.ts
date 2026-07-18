@@ -1,3 +1,10 @@
+export type ProjectStatus =
+  | "active"
+  | "closed"
+  | "draft"
+  | "in_progress"
+  | "under_review";
+
 export interface Project {
   id: string;
   title: string;
@@ -6,7 +13,8 @@ export interface Project {
   budget_min: number;
   budget_max: number;
   client_name: string | null;
-  status: string;
+  status: ProjectStatus;
+  student_id?: string | null;
   created_at: string;
 }
 
