@@ -45,7 +45,7 @@ export default function ProjectsPage() {
         </section>
 
         {/* Feed */}
-        <ProjectFeed />
+        <ProjectFeed clientName={currentUser.role?.toLowerCase() === "client" ? currentUser.name : undefined} />
       </main>
     </>
   );
