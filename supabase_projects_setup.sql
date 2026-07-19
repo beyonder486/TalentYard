@@ -24,6 +24,11 @@ create policy "anyone can read active projects"
   for select
   using (status = 'active');
 
+create policy "anyone can insert projects"
+  on public.projects
+  for insert
+  with check (true);
+
 -- ── Sample seed data (optional) ─────────────────────────────
 insert into public.projects (title, description, skills, budget_min, budget_max, client_name) values
   (

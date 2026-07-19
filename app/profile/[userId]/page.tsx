@@ -11,15 +11,19 @@ function getInitials(name: string) {
   return name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
 }
 
-// We store the user name in localStorage too so the public view can display it
-function readUserName(userId: string): string {
+import { supabase } from "../../../lib/supabase";
+
+async function fetchUserInfo(userId: string) {
   try {
-    const raw = localStorage.getItem("ty_user");
-    if (!raw) return "Unknown Student";
-    const user = JSON.parse(raw);
-    return user.id === userId ? user.name : "Student Freelancer";
+    const { data, error } = await supabase
+      .from("users")
+      .select("name, role")
+      .eq("id", userId)
+      .single();
+    if (error) throw error;
+    return { name: data.name, role: data.role };
   } catch {
-    return "Student Freelancer";
+    return { name: "Unknown User" };
   }
 }
 
@@ -28,18 +32,28 @@ export default function PublicProfilePage() {
   const userId = typeof params.userId === "string" ? params.userId : "";
   const { currentUser } = useAuth();
   const [profile, setProfile] = useState<FreelancerProfile | null>(null);
-  const [userName, setUserName] = useState("Student Freelancer");
+  const [userName, setUserName] = useState("Loading...");
+  const [userRole, setUserRole] = useState<string | undefined>();
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    if (userId) {
-      setProfile(readPublicProfile(userId));
-      setUserName(readUserName(userId));
-      setLoaded(true);
+    async function loadData() {
+      if (userId) {
+        setProfile(readPublicProfile(userId));
+        const info = await fetchUserInfo(userId);
+        setUserName(info.name);
+        setUserRole(info.role);
+        setLoaded(true);
+      }
     }
+    loadData();
   }, [userId]);
 
   const isOwnProfile = currentUser?.id === userId;
+  const isClientProfile = (isOwnProfile && currentUser?.role?.toLowerCase() === "client") || 
+                          profile?.companyName || 
+                          profile?.industry || 
+                          userRole?.toLowerCase() === "client";
 
   if (!loaded) {
     return <div className="page-loading"><span className="spinner" /></div>;
@@ -61,42 +75,57 @@ export default function PublicProfilePage() {
               <p className="public-profile__uid">
                 ID: <code className="user-id-badge user-id-badge--sm">{userId}</code>
               </p>
-              {profile?.hourlyRate ? (
-                <span className="rate-badge">${profile.hourlyRate} / hr</span>
-              ) : (
-                <span className="rate-badge rate-badge--empty">Project-based pricing</span>
+              {!isClientProfile && (
+                profile?.hourlyRate ? (
+                  <span className="rate-badge">${profile.hourlyRate} / hr</span>
+                ) : (
+                  <span className="rate-badge rate-badge--empty">Project-based pricing</span>
+                )
               )}
             </div>
           </div>
 
+          {/* Client specifics */}
+          {isClientProfile && (profile?.companyName || profile?.industry) && (
+            <section className="public-profile__section">
+              <h2 className="public-profile__section-title">Company Info</h2>
+              {profile?.companyName && <p style={{ marginBottom: "0.5rem" }}><strong>Company:</strong> {profile.companyName}</p>}
+              {profile?.industry && <p><strong>Industry:</strong> {profile.industry}</p>}
+            </section>
+          )}
+
           {/* Bio */}
           {profile?.bio ? (
             <section className="public-profile__section" aria-labelledby="bio-heading">
-              <h2 id="bio-heading" className="public-profile__section-title">About</h2>
+              <h2 id="bio-heading" className="public-profile__section-title">
+                {isClientProfile ? "About Company" : "About"}
+              </h2>
               <p className="public-profile__bio">{profile.bio}</p>
             </section>
           ) : (
             <div className="public-profile__empty-section">
-              <p>No bio added yet.</p>
+              <p>No description added yet.</p>
             </div>
           )}
 
-          {/* Skills */}
-          {profile?.skills && profile.skills.length > 0 ? (
-            <section className="public-profile__section" aria-labelledby="skills-heading">
-              <h2 id="skills-heading" className="public-profile__section-title">Skills</h2>
-              <div className="public-profile__skills">
-                {profile.skills.map((skill) => (
-                  <span key={skill} className="skill-chip skill-chip--lg">
-                    {skill}
-                  </span>
-                ))}
+          {/* Skills (Only for Talent) */}
+          {!isClientProfile && (
+            profile?.skills && profile.skills.length > 0 ? (
+              <section className="public-profile__section" aria-labelledby="skills-heading">
+                <h2 id="skills-heading" className="public-profile__section-title">Skills</h2>
+                <div className="public-profile__skills">
+                  {profile.skills.map((skill) => (
+                    <span key={skill} className="skill-chip skill-chip--lg">
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </section>
+            ) : (
+              <div className="public-profile__empty-section">
+                <p>No skills listed yet.</p>
               </div>
-            </section>
-          ) : (
-            <div className="public-profile__empty-section">
-              <p>No skills listed yet.</p>
-            </div>
+            )
           )}
 
           {/* Actions */}

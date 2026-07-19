@@ -23,7 +23,7 @@ export function useProjects(filters: ProjectFilters) {
       setError(null);
 
       try {
-        const { skillQuery, budgetRange } = filtersRef.current;
+        const { skillQuery, budgetRange, clientName } = filtersRef.current;
         const [budgetMin, budgetMax] = budgetRange;
 
         let query = supabase
@@ -33,6 +33,10 @@ export function useProjects(filters: ProjectFilters) {
           .lte("budget_min", budgetMax === BUDGET_MAX ? 9999999 : budgetMax)
           .gte("budget_max", budgetMin)
           .order("created_at", { ascending: false });
+
+        if (clientName) {
+          query = query.eq("client_name", clientName);
+        }
 
         // Free-text skill filter: match rows where any skill contains the query string (case-insensitive)
         if (skillQuery.trim()) {

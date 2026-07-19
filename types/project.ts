@@ -13,4 +13,5 @@ export interface Project {
 export interface ProjectFilters {
   skillQuery: string;
   budgetRange: [number, number];
+  clientName?: string;
 }

@@ -35,13 +35,13 @@ function SkeletonCard({ index }: { index: number }) {
   );
 }
 
-export default function ProjectFeed() {
+export default function ProjectFeed({ clientName }: { clientName?: string } = {}) {
   const [skillQuery, setSkillQuery] = useState("");
   const [budgetRange, setBudgetRange] = useState<[number, number]>(DEFAULT_BUDGET);
 
   const filters = useMemo(
-    () => ({ skillQuery, budgetRange }),
-    [skillQuery, budgetRange]
+    () => ({ skillQuery, budgetRange, clientName }),
+    [skillQuery, budgetRange, clientName]
   );
 
   const { projects, loading, error } = useProjects(filters);

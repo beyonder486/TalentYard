@@ -8,6 +8,8 @@ export interface FreelancerProfile {
   bio: string;
   hourlyRate: number;
   skills: string[];
+  companyName?: string;
+  industry?: string;
   updatedAt: string;
 }
 
